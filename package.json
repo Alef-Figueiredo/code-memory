@@ -1,0 +1,45 @@
+{
+  "name": "code-memory-visualizer",
+  "displayName": "Code Memory Visualizer",
+  "description": "Educational VS Code extension prototype for stepping through Python code.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Education",
+    "Visualization",
+    "Debuggers"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onCommand:codeMemory.start"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeMemory.start",
+        "title": "Code Memory: Start",
+        "category": "Code Memory"
+      }
+    ],
+    "configuration": {
+      "title": "Code Memory",
+      "properties": {
+        "codeMemory.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python command used by Code Memory. Examples: python, python3, py -3."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node scripts/smoke-test.js"
+  }
+}
+

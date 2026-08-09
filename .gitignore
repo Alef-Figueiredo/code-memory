@@ -1,0 +1,9 @@
+.vscode-test/
+node_modules/
+*.vsix
+out/
+dist/
+coverage/
+__pycache__/
+*.pyc
+
