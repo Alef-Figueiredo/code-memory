@@ -1,8 +1,9 @@
 title = "Code Memory"
 count = 3
+total = 0
 
 for index in range(count):
-    print(title, index)
+    total = total + index
+    print(title, index, total)
 
-print("done")
-
+print("done", total)

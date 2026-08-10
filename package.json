@@ -2,7 +2,7 @@
   "name": "code-memory-visualizer",
   "displayName": "Code Memory Visualizer",
   "description": "Educational VS Code extension prototype for stepping through Python code.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "local",
   "engines": {
     "vscode": "^1.90.0"
@@ -42,4 +42,3 @@
     "test": "node scripts/smoke-test.js"
   }
 }
-

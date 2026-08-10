@@ -68,7 +68,7 @@ class MemoryVisualizerPanel {
     this.post({
       type: "status",
       state: "ready",
-      message: "Ready"
+      message: "Pronto"
     });
   }
 
@@ -93,7 +93,7 @@ class MemoryVisualizerPanel {
       this.post({
         type: "status",
         state: "idle",
-        message: "Open a Python file"
+        message: "Abra um arquivo Python"
       });
       return;
     }
@@ -103,8 +103,8 @@ class MemoryVisualizerPanel {
         type: "status",
         state: this.session.isPaused() ? "paused" : "running",
         message: this.session.isPaused()
-          ? "Paused. Use Next step or Restart."
-          : "Running..."
+          ? "Pausado. Use Proxima etapa ou Reiniciar."
+          : "Executando..."
       });
       return;
     }
@@ -119,7 +119,7 @@ class MemoryVisualizerPanel {
       this.post({
         type: "status",
         state: "ready",
-        message: "Start the execution first"
+        message: "Inicie a execucao primeiro"
       });
       return;
     }
@@ -146,19 +146,20 @@ class MemoryVisualizerPanel {
       filePath: this.document.uri.fsPath,
       cwd: workspaceFolder ? workspaceFolder.uri.fsPath : path.dirname(this.document.uri.fsPath),
       callbacks: {
-        onPause: (line) => {
+        onPause: (executionState) => {
           if (!this.isActiveSession(sessionId)) {
             return;
           }
 
           this.post({
             type: "pause",
-            line
+            line: executionState.currentLine,
+            state: executionState
           });
           this.post({
             type: "status",
             state: "paused",
-            message: `Paused at line ${line}`
+            message: `Pausado na linha ${executionState.currentLine}`
           });
         },
         onOutput: (stream, text) => {
@@ -172,20 +173,21 @@ class MemoryVisualizerPanel {
             text
           });
         },
-        onDone: ({ exitCode, signal }) => {
+        onDone: ({ exitCode, signal, state }) => {
           if (!this.isActiveSession(sessionId)) {
             return;
           }
 
-          const detail = signal ? `signal ${signal}` : `exit code ${exitCode}`;
+          const detail = signal ? `sinal ${signal}` : `codigo de saida ${exitCode}`;
           this.post({
             type: "done",
-            message: `Finished with ${detail}`
+            message: `Finalizado com ${detail}`,
+            state
           });
           this.post({
             type: "status",
             state: "done",
-            message: `Finished with ${detail}`
+            message: `Finalizado com ${detail}`
           });
         },
         onError: (message) => {
@@ -201,7 +203,7 @@ class MemoryVisualizerPanel {
           this.post({
             type: "status",
             state: "error",
-            message: "Execution error"
+            message: "Erro de execucao"
           });
         },
         onStatus: (state, message) => {
@@ -269,6 +271,8 @@ class MemoryVisualizerPanel {
       --accent: var(--vscode-focusBorder);
       --panel-border: var(--vscode-panel-border);
       --muted: var(--vscode-descriptionForeground);
+      --created: var(--vscode-charts-green, #4caf50);
+      --changed: var(--vscode-charts-yellow, #f5c542);
     }
 
     * {
@@ -373,13 +377,19 @@ class MemoryVisualizerPanel {
     }
 
     .code-area,
-    .output-area {
+    .state-area {
       min-width: 0;
       min-height: 0;
+    }
+
+    .code-area {
       overflow: auto;
     }
 
-    .output-area {
+    .state-area {
+      display: grid;
+      grid-template-rows: auto auto auto minmax(170px, 1fr) auto minmax(120px, 1fr);
+      overflow: hidden;
       border-left: 1px solid var(--panel-border);
       background: var(--vscode-terminal-background, var(--vscode-editor-background));
     }
@@ -442,6 +452,7 @@ class MemoryVisualizerPanel {
     .output {
       margin: 0;
       padding: 10px 12px 18px;
+      overflow: auto;
       white-space: pre-wrap;
       font-family: var(--vscode-editor-font-family);
       font-size: var(--vscode-editor-font-size);
@@ -450,6 +461,108 @@ class MemoryVisualizerPanel {
 
     .stderr {
       color: var(--vscode-errorForeground);
+    }
+
+    .execution-state,
+    .variables {
+      min-height: 0;
+      overflow: auto;
+      padding: 10px 12px;
+    }
+
+    .execution-state {
+      display: grid;
+      gap: 8px;
+      border-bottom: 1px solid var(--panel-border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .state-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .metric strong {
+      color: var(--vscode-foreground);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stack-list {
+      display: grid;
+      gap: 3px;
+      margin-top: 2px;
+    }
+
+    .stack-frame {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .variables {
+      display: grid;
+      align-content: start;
+      gap: 6px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .variable-row {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(52px, 0.42fr) 18px minmax(90px, 1fr);
+      gap: 6px;
+      align-items: baseline;
+      padding: 5px 7px;
+      border-left: 3px solid transparent;
+      background: var(--vscode-editorWidget-background);
+    }
+
+    .variable-row.created {
+      border-left-color: var(--created);
+    }
+
+    .variable-row.changed {
+      border-left-color: var(--changed);
+    }
+
+    .variable-name,
+    .variable-value,
+    .variable-scope {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .variable-name {
+      color: var(--vscode-symbolIcon-variableForeground, var(--vscode-foreground));
+      font-weight: 600;
+    }
+
+    .variable-arrow,
+    .variable-scope,
+    .empty-state {
+      color: var(--muted);
+    }
+
+    .variable-value {
+      font-family: var(--vscode-editor-font-family);
+    }
+
+    .variable-scope {
+      grid-column: 3;
+      font-size: 11px;
     }
 
     @media (max-width: 760px) {
@@ -471,7 +584,7 @@ class MemoryVisualizerPanel {
         grid-template-rows: minmax(260px, 1fr) 220px;
       }
 
-      .output-area {
+      .state-area {
         border-left: 0;
         border-top: 1px solid var(--panel-border);
       }
@@ -485,11 +598,12 @@ class MemoryVisualizerPanel {
         <strong>Code Memory</strong>
         <span id="fileName">No file</span>
       </div>
-      <div id="status" class="status">Ready</div>
+      <div id="status" class="status">Pronto</div>
     </header>
 
     <nav class="toolbar" aria-label="Execution controls">
       <button id="run" title="Executar"><span aria-hidden="true">&#9654;</span><span>Executar</span></button>
+      <button id="back" class="secondary" title="Voltar etapa"><span aria-hidden="true">&#8592;</span><span>Voltar etapa</span></button>
       <button id="step" class="secondary" title="Proxima etapa"><span aria-hidden="true">&#9193;</span><span>Proxima etapa</span></button>
       <button id="restart" class="secondary" title="Reiniciar"><span aria-hidden="true">&#8635;</span><span>Reiniciar</span></button>
     </nav>
@@ -499,7 +613,11 @@ class MemoryVisualizerPanel {
         <div class="section-title">Codigo</div>
         <div id="code" class="code"></div>
       </div>
-      <div class="output-area">
+      <div class="state-area">
+        <div class="section-title">Estado</div>
+        <div id="executionState" class="execution-state"></div>
+        <div class="section-title">Variaveis</div>
+        <div id="variables" class="variables"></div>
         <div class="section-title">Saida</div>
         <pre id="output" class="output"></pre>
       </div>
@@ -511,20 +629,35 @@ class MemoryVisualizerPanel {
     const fileName = document.getElementById("fileName");
     const status = document.getElementById("status");
     const code = document.getElementById("code");
+    const executionState = document.getElementById("executionState");
+    const variables = document.getElementById("variables");
     const output = document.getElementById("output");
     const run = document.getElementById("run");
+    const back = document.getElementById("back");
     const step = document.getElementById("step");
     const restart = document.getElementById("restart");
 
     const state = {
       lines: [],
       currentLine: undefined,
+      currentExecutionState: undefined,
+      history: [],
+      historyIndex: -1,
       sourceLoaded: false,
-      status: "ready"
+      status: "ready",
+      statusMessage: "Pronto"
     };
 
     run.addEventListener("click", () => vscode.postMessage({ command: "run" }));
-    step.addEventListener("click", () => vscode.postMessage({ command: "step" }));
+    back.addEventListener("click", () => showHistoryState(state.historyIndex - 1));
+    step.addEventListener("click", () => {
+      if (state.historyIndex < state.history.length - 1) {
+        showHistoryState(state.historyIndex + 1);
+        return;
+      }
+
+      vscode.postMessage({ command: "step" });
+    });
     restart.addEventListener("click", () => vscode.postMessage({ command: "restart" }));
 
     window.addEventListener("message", (event) => {
@@ -534,36 +667,48 @@ class MemoryVisualizerPanel {
         case "source":
           state.lines = message.code.split(/\\r?\\n/);
           state.currentLine = undefined;
+          state.currentExecutionState = undefined;
+          state.history = [];
+          state.historyIndex = -1;
           state.sourceLoaded = true;
           fileName.textContent = message.fileName;
           output.textContent = "";
           renderCode();
+          renderExecutionState();
           updateButtons();
           break;
         case "resetExecution":
           state.currentLine = undefined;
+          state.currentExecutionState = undefined;
+          state.history = [];
+          state.historyIndex = -1;
           state.status = "running";
           output.textContent = "";
           renderCode();
+          renderExecutionState();
           updateButtons();
           break;
         case "pause":
-          state.currentLine = message.line;
           state.status = "paused";
-          renderCode();
-          updateButtons();
+          appendExecutionState(normalizeExecutionState(message.state, message.line));
           break;
         case "output":
           appendOutput(message.stream, message.text);
           break;
         case "done":
-          state.currentLine = undefined;
           state.status = "done";
-          renderCode();
+          if (message.state) {
+            appendExecutionState(normalizeExecutionState(message.state, undefined));
+          } else {
+            state.currentLine = undefined;
+            renderCode();
+            renderExecutionState();
+          }
           updateButtons();
           break;
         case "status":
           state.status = message.state;
+          state.statusMessage = message.message;
           status.textContent = message.message;
           updateButtons();
           break;
@@ -571,6 +716,162 @@ class MemoryVisualizerPanel {
           break;
       }
     });
+
+    function normalizeExecutionState(rawState, fallbackLine) {
+      const snapshot = rawState || {};
+      const currentLine = snapshot.currentLine === null || snapshot.currentLine === undefined
+        ? fallbackLine
+        : snapshot.currentLine;
+
+      return {
+        currentLine,
+        variables: snapshot.variables || {},
+        callStack: Array.isArray(snapshot.callStack) ? snapshot.callStack : [],
+        heap: Array.isArray(snapshot.heap) ? snapshot.heap : []
+      };
+    }
+
+    function appendExecutionState(snapshot) {
+      if (state.historyIndex < state.history.length - 1) {
+        state.history = state.history.slice(0, state.historyIndex + 1);
+      }
+
+      state.history.push(snapshot);
+      showHistoryState(state.history.length - 1);
+    }
+
+    function showHistoryState(index) {
+      if (index < 0 || index >= state.history.length) {
+        return;
+      }
+
+      state.historyIndex = index;
+      state.currentExecutionState = state.history[index];
+      state.currentLine = state.currentExecutionState.currentLine;
+
+      renderCode();
+      renderExecutionState();
+      updateButtons();
+
+      if (state.historyIndex < state.history.length - 1) {
+        status.textContent = "Visualizando etapa " + (state.historyIndex + 1) + " de " + state.history.length;
+      } else {
+        status.textContent = state.statusMessage;
+      }
+    }
+
+    function renderExecutionState() {
+      executionState.textContent = "";
+      variables.textContent = "";
+
+      const snapshot = state.currentExecutionState;
+
+      if (!snapshot) {
+        appendEmpty(executionState, "Nenhuma execucao ainda.");
+        appendEmpty(variables, "Sem variaveis.");
+        return;
+      }
+
+      const metrics = document.createElement("div");
+      metrics.className = "state-metrics";
+      metrics.append(
+        createMetric("Etapa", String(state.historyIndex + 1) + "/" + String(state.history.length)),
+        createMetric("Linha", snapshot.currentLine ? String(snapshot.currentLine) : "final"),
+        createMetric("Frames", String(snapshot.callStack.length)),
+        createMetric("Heap", String(snapshot.heap.length))
+      );
+      executionState.append(metrics);
+
+      const stackList = document.createElement("div");
+      stackList.className = "stack-list";
+
+      if (snapshot.callStack.length === 0) {
+        appendEmpty(stackList, "Call stack vazio.");
+      } else {
+        snapshot.callStack.forEach((frame) => {
+          const frameRow = document.createElement("div");
+          frameRow.className = "stack-frame";
+          frameRow.textContent = frame.name + "() - linha " + frame.line;
+          stackList.append(frameRow);
+        });
+      }
+
+      executionState.append(stackList);
+      renderVariables(snapshot);
+    }
+
+    function renderVariables(snapshot) {
+      const currentVariables = Object.values(snapshot.variables || {})
+        .sort((left, right) => left.name.localeCompare(right.name));
+      const previousSnapshot = state.history[state.historyIndex - 1];
+      const previousVariables = previousSnapshot ? previousSnapshot.variables || {} : {};
+
+      if (currentVariables.length === 0) {
+        appendEmpty(variables, "Sem variaveis.");
+        return;
+      }
+
+      currentVariables.forEach((variable) => {
+        const previous = previousVariables[variable.name];
+        const row = document.createElement("div");
+        const changed = previous && previous.repr !== variable.repr;
+        const created = !previous;
+        row.className = "variable-row" + (created ? " created" : changed ? " changed" : "");
+
+        const name = document.createElement("span");
+        name.className = "variable-name";
+        name.textContent = variable.name;
+
+        const arrow = document.createElement("span");
+        arrow.className = "variable-arrow";
+        arrow.textContent = "->";
+
+        const value = document.createElement("span");
+        value.className = "variable-value";
+        value.title = variable.repr;
+        value.textContent = variable.repr;
+
+        const scope = document.createElement("span");
+        scope.className = "variable-scope";
+        scope.textContent = variable.scope + " | " + variable.type + variableChangeLabel(created, changed);
+
+        row.append(name, arrow, value, scope);
+        variables.append(row);
+      });
+    }
+
+    function variableChangeLabel(created, changed) {
+      if (created) {
+        return " | criada";
+      }
+
+      if (changed) {
+        return " | alterada";
+      }
+
+      return "";
+    }
+
+    function createMetric(label, value) {
+      const metric = document.createElement("div");
+      metric.className = "metric";
+
+      const labelElement = document.createElement("span");
+      labelElement.textContent = label;
+
+      const valueElement = document.createElement("strong");
+      valueElement.textContent = value;
+
+      metric.append(labelElement, valueElement);
+      return metric;
+    }
+
+    function appendEmpty(parent, text) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = text;
+      parent.append(empty);
+    }
 
     function renderCode() {
       code.textContent = "";
@@ -613,12 +914,17 @@ class MemoryVisualizerPanel {
       const hasSource = state.sourceLoaded;
       const isRunning = state.status === "running";
       const isPaused = state.status === "paused";
+      const hasPreviousState = state.historyIndex > 0;
+      const hasNextHistoryState = state.historyIndex >= 0 && state.historyIndex < state.history.length - 1;
+      const canStepLive = isPaused && state.historyIndex === state.history.length - 1;
 
       run.disabled = !hasSource || isRunning || isPaused;
-      step.disabled = !hasSource || !isPaused;
+      back.disabled = !hasSource || isRunning || !hasPreviousState;
+      step.disabled = !hasSource || isRunning || (!canStepLive && !hasNextHistoryState);
       restart.disabled = !hasSource || isRunning;
     }
 
+    renderExecutionState();
     updateButtons();
   </script>
 </body>

@@ -53,7 +53,7 @@ class PythonExecutionSession {
     const command = commandParts[0] || "python";
     const args = [...commandParts.slice(1), this.runnerPath, this.filePath];
 
-    this.callbacks.onStatus("running", "Starting Python...");
+    this.callbacks.onStatus("running", "Iniciando Python...");
     this.outputChannel.appendLine(`[python] ${command} ${args.join(" ")}`);
 
     this.child = spawn(command, args, {
@@ -87,7 +87,7 @@ class PythonExecutionSession {
     }
 
     this.paused = false;
-    this.callbacks.onStatus("running", "Running...");
+    this.callbacks.onStatus("running", "Executando...");
     this.child.stdin.write(JSON.stringify({ command: "step" }) + "\n");
   }
 
@@ -145,7 +145,12 @@ class PythonExecutionSession {
     switch (event.type) {
       case "paused":
         this.paused = true;
-        this.callbacks.onPause(event.line);
+        this.callbacks.onPause(event.state || {
+          currentLine: event.line,
+          variables: {},
+          callStack: [],
+          heap: []
+        });
         break;
       case "output":
         this.callbacks.onOutput(event.stream, event.text);
@@ -158,7 +163,8 @@ class PythonExecutionSession {
         this.done = true;
         this.callbacks.onDone({
           exitCode: event.exitCode,
-          signal: undefined
+          signal: undefined,
+          state: event.state
         });
         break;
       default:
@@ -185,4 +191,3 @@ module.exports = {
   PythonAdapter,
   parseCommandLine
 };
-

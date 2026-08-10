@@ -86,14 +86,19 @@ async function runSmokeTest() {
 
   const pausedEvents = events.filter((event) => event.type === "paused");
   const doneEvent = events.find((event) => event.type === "done");
+  const stateEvents = pausedEvents.filter((event) => event.state);
   const outputText = events
     .filter((event) => event.type === "output")
     .map((event) => event.text)
     .join("");
 
   assert(pausedEvents.length >= 5, "expected at least five paused events");
+  assert(stateEvents.length > 0, "expected paused events to include execution state");
   assert(doneEvent, "expected a done event");
   assert.strictEqual(doneEvent.exitCode, 0, "expected a successful exit code");
+  assert(doneEvent.state, "expected done event to include final execution state");
+  assert(doneEvent.state.variables.total, "expected final state to include total");
+  assert.strictEqual(doneEvent.state.variables.total.repr, "3", "expected final total to be 3");
   assert(outputText.includes("Code Memory 0"), "expected program output");
 
   console.log("Smoke test passed.");
