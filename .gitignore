@@ -1,4 +1,5 @@
 .vscode-test/
+.pnpm-store/
 node_modules/
 *.vsix
 out/
