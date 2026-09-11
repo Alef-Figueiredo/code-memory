@@ -1,8 +1,8 @@
 {
   "name": "code-memory-visualizer",
   "displayName": "Code Memory Visualizer",
-  "description": "Educational VS Code extension prototype for stepping through Python code.",
-  "version": "0.2.0",
+  "description": "Educational VS Code extension prototype for stepping through Python code and visualizing memory state.",
+  "version": "0.3.0",
   "publisher": "local",
   "engines": {
     "vscode": "^1.90.0"

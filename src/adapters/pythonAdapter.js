@@ -149,7 +149,10 @@ class PythonExecutionSession {
           currentLine: event.line,
           variables: {},
           callStack: [],
-          heap: []
+          heap: [],
+          stackFrames: [],
+          heapObjects: [],
+          references: []
         });
         break;
       case "output":

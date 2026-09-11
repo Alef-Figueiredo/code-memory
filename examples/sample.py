@@ -1,9 +1,15 @@
-title = "Code Memory"
-count = 3
-total = 0
+class Counter:
+    def __init__(self, label):
+        self.label = label
+        self.values = []
 
-for index in range(count):
-    total = total + index
-    print(title, index, total)
+    def add(self, value):
+        self.values.append(value)
+        return sum(self.values)
 
-print("done", total)
+
+counter = Counter("Code Memory")
+alias = counter
+first = counter.add(1)
+second = alias.add(2)
+print(counter.label, second)

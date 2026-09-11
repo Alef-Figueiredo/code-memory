@@ -273,6 +273,9 @@ class MemoryVisualizerPanel {
       --muted: var(--vscode-descriptionForeground);
       --created: var(--vscode-charts-green, #4caf50);
       --changed: var(--vscode-charts-yellow, #f5c542);
+      --reference: var(--vscode-charts-blue, #4da3ff);
+      --surface: var(--vscode-editorWidget-background);
+      --surface-strong: var(--vscode-sideBar-background);
     }
 
     * {
@@ -300,7 +303,7 @@ class MemoryVisualizerPanel {
       gap: 12px;
       padding: 12px 16px;
       border-bottom: 1px solid var(--panel-border);
-      background: var(--vscode-sideBar-background);
+      background: var(--surface-strong);
     }
 
     .title {
@@ -334,7 +337,7 @@ class MemoryVisualizerPanel {
       gap: 8px;
       padding: 10px 16px;
       border-bottom: 1px solid var(--panel-border);
-      background: var(--vscode-editorWidget-background);
+      background: var(--surface);
     }
 
     button {
@@ -373,23 +376,17 @@ class MemoryVisualizerPanel {
     .content {
       min-height: 0;
       display: grid;
-      grid-template-columns: minmax(280px, 1fr) minmax(220px, 34%);
+      grid-template-columns: minmax(280px, 1fr) minmax(320px, 42%);
     }
 
     .code-area,
     .state-area {
       min-width: 0;
       min-height: 0;
-    }
-
-    .code-area {
       overflow: auto;
     }
 
     .state-area {
-      display: grid;
-      grid-template-rows: auto auto auto minmax(170px, 1fr) auto minmax(120px, 1fr);
-      overflow: hidden;
       border-left: 1px solid var(--panel-border);
       background: var(--vscode-terminal-background, var(--vscode-editor-background));
     }
@@ -398,15 +395,22 @@ class MemoryVisualizerPanel {
       position: sticky;
       top: 0;
       z-index: 1;
-      height: 32px;
+      min-height: 32px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       padding: 0 12px;
       border-bottom: 1px solid var(--panel-border);
       color: var(--muted);
       background: var(--vscode-editor-background);
       font-size: 12px;
       text-transform: uppercase;
+    }
+
+    .section-count {
+      color: var(--vscode-foreground);
+      font-variant-numeric: tabular-nums;
     }
 
     .code {
@@ -449,36 +453,23 @@ class MemoryVisualizerPanel {
       content: " ";
     }
 
-    .output {
-      margin: 0;
-      padding: 10px 12px 18px;
-      overflow: auto;
-      white-space: pre-wrap;
-      font-family: var(--vscode-editor-font-family);
-      font-size: var(--vscode-editor-font-size);
-      line-height: var(--line-height);
+    .state-section {
+      border-bottom: 1px solid var(--panel-border);
     }
 
-    .stderr {
-      color: var(--vscode-errorForeground);
-    }
-
-    .execution-state,
+    .summary,
+    .stack,
+    .heap,
+    .references,
     .variables {
-      min-height: 0;
-      overflow: auto;
+      min-width: 0;
+      display: grid;
+      align-content: start;
+      gap: 8px;
       padding: 10px 12px;
     }
 
-    .execution-state {
-      display: grid;
-      gap: 8px;
-      border-bottom: 1px solid var(--panel-border);
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .state-metrics {
+    .summary-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
@@ -488,84 +479,188 @@ class MemoryVisualizerPanel {
       min-width: 0;
       display: grid;
       gap: 2px;
+      padding: 7px 8px;
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      background: var(--surface);
     }
 
-    .metric strong {
-      color: var(--vscode-foreground);
-      font-weight: 600;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .stack-list {
-      display: grid;
-      gap: 3px;
-      margin-top: 2px;
-    }
-
-    .stack-frame {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .variables {
-      display: grid;
-      align-content: start;
-      gap: 6px;
-      border-bottom: 1px solid var(--panel-border);
-    }
-
-    .variable-row {
-      min-width: 0;
-      display: grid;
-      grid-template-columns: minmax(52px, 0.42fr) 18px minmax(90px, 1fr);
-      gap: 6px;
-      align-items: baseline;
-      padding: 5px 7px;
-      border-left: 3px solid transparent;
-      background: var(--vscode-editorWidget-background);
-    }
-
-    .variable-row.created {
-      border-left-color: var(--created);
-    }
-
-    .variable-row.changed {
-      border-left-color: var(--changed);
-    }
-
-    .variable-name,
-    .variable-value,
-    .variable-scope {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .variable-name {
-      color: var(--vscode-symbolIcon-variableForeground, var(--vscode-foreground));
-      font-weight: 600;
-    }
-
-    .variable-arrow,
-    .variable-scope,
-    .empty-state {
+    .metric span {
       color: var(--muted);
-    }
-
-    .variable-value {
-      font-family: var(--vscode-editor-font-family);
-    }
-
-    .variable-scope {
-      grid-column: 3;
       font-size: 11px;
     }
 
-    @media (max-width: 760px) {
+    .metric strong {
+      overflow: hidden;
+      color: var(--vscode-foreground);
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stack-frame,
+    .heap-object,
+    .reference-row,
+    .variable-row,
+    .member-row {
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+
+    .stack-frame,
+    .heap-object {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+      padding: 9px;
+      border: 1px solid var(--panel-border);
+      border-left: 3px solid var(--reference);
+      border-radius: 6px;
+      background: var(--surface);
+    }
+
+    .stack-frame.created,
+    .heap-object.created,
+    .variable-row.created,
+    .reference-row.created {
+      border-left-color: var(--created);
+      animation: pulseChange 520ms ease-out;
+    }
+
+    .stack-frame.changed,
+    .heap-object.changed,
+    .variable-row.changed,
+    .reference-row.changed,
+    .member-row.changed {
+      border-left-color: var(--changed);
+      animation: pulseChange 520ms ease-out;
+    }
+
+    .card-header {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-title,
+    .object-id,
+    .reference-source,
+    .reference-target,
+    .variable-name,
+    .variable-value,
+    .member-name,
+    .member-value {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-title,
+    .variable-name,
+    .member-name,
+    .reference-source,
+    .reference-target {
+      font-weight: 600;
+    }
+
+    .object-id,
+    .card-meta,
+    .variable-meta,
+    .empty-state,
+    .reference-kind,
+    .member-meta {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .parameter-list,
+    .member-list,
+    .frame-variable-list {
+      display: grid;
+      gap: 5px;
+    }
+
+    .parameter-list {
+      grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    }
+
+    .parameter-chip {
+      min-width: 0;
+      overflow: hidden;
+      padding: 4px 6px;
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      color: var(--vscode-foreground);
+      background: var(--vscode-input-background);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    .variable-row,
+    .member-row,
+    .reference-row {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+      padding: 6px 7px;
+      border-left: 3px solid transparent;
+      background: var(--surface);
+    }
+
+    .variable-main,
+    .member-main,
+    .reference-main {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(68px, 0.42fr) 20px minmax(96px, 1fr);
+      gap: 6px;
+      align-items: baseline;
+    }
+
+    .variable-arrow,
+    .member-arrow,
+    .reference-arrow {
+      color: var(--reference);
+      text-align: center;
+    }
+
+    .variable-value,
+    .member-value,
+    .output {
+      font-family: var(--vscode-editor-font-family);
+    }
+
+    .reference-row {
+      border-left-color: var(--reference);
+    }
+
+    .output {
+      margin: 0;
+      min-height: 110px;
+      padding: 10px 12px 18px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-size: var(--vscode-editor-font-size);
+      line-height: var(--line-height);
+    }
+
+    .stderr {
+      color: var(--vscode-errorForeground);
+    }
+
+    @keyframes pulseChange {
+      0% {
+        background: color-mix(in srgb, var(--changed) 20%, var(--surface));
+      }
+      100% {
+        background: var(--surface);
+      }
+    }
+
+    @media (max-width: 860px) {
       .topbar {
         align-items: flex-start;
         flex-direction: column;
@@ -581,7 +676,7 @@ class MemoryVisualizerPanel {
 
       .content {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(260px, 1fr) 220px;
+        grid-template-rows: minmax(260px, 1fr) minmax(360px, 1fr);
       }
 
       .state-area {
@@ -614,12 +709,30 @@ class MemoryVisualizerPanel {
         <div id="code" class="code"></div>
       </div>
       <div class="state-area">
-        <div class="section-title">Estado</div>
-        <div id="executionState" class="execution-state"></div>
-        <div class="section-title">Variaveis</div>
-        <div id="variables" class="variables"></div>
-        <div class="section-title">Saida</div>
-        <pre id="output" class="output"></pre>
+        <section class="state-section">
+          <div class="section-title">Estado</div>
+          <div id="summary" class="summary"></div>
+        </section>
+        <section class="state-section">
+          <div class="section-title"><span>Stack</span><span id="stackCount" class="section-count">0</span></div>
+          <div id="stack" class="stack"></div>
+        </section>
+        <section class="state-section">
+          <div class="section-title"><span>Heap</span><span id="heapCount" class="section-count">0</span></div>
+          <div id="heap" class="heap"></div>
+        </section>
+        <section class="state-section">
+          <div class="section-title"><span>Referencias</span><span id="referenceCount" class="section-count">0</span></div>
+          <div id="references" class="references"></div>
+        </section>
+        <section class="state-section">
+          <div class="section-title"><span>Variaveis</span><span id="variableCount" class="section-count">0</span></div>
+          <div id="variables" class="variables"></div>
+        </section>
+        <section class="state-section">
+          <div class="section-title">Saida</div>
+          <pre id="output" class="output"></pre>
+        </section>
       </div>
     </section>
   </main>
@@ -629,8 +742,15 @@ class MemoryVisualizerPanel {
     const fileName = document.getElementById("fileName");
     const status = document.getElementById("status");
     const code = document.getElementById("code");
-    const executionState = document.getElementById("executionState");
+    const summary = document.getElementById("summary");
+    const stack = document.getElementById("stack");
+    const heap = document.getElementById("heap");
+    const references = document.getElementById("references");
     const variables = document.getElementById("variables");
+    const stackCount = document.getElementById("stackCount");
+    const heapCount = document.getElementById("heapCount");
+    const referenceCount = document.getElementById("referenceCount");
+    const variableCount = document.getElementById("variableCount");
     const output = document.getElementById("output");
     const run = document.getElementById("run");
     const back = document.getElementById("back");
@@ -722,12 +842,25 @@ class MemoryVisualizerPanel {
       const currentLine = snapshot.currentLine === null || snapshot.currentLine === undefined
         ? fallbackLine
         : snapshot.currentLine;
+      const stackFrames = Array.isArray(snapshot.stackFrames)
+        ? snapshot.stackFrames
+        : Array.isArray(snapshot.callStack)
+          ? snapshot.callStack
+          : [];
+      const heapObjects = Array.isArray(snapshot.heapObjects)
+        ? snapshot.heapObjects
+        : Array.isArray(snapshot.heap)
+          ? snapshot.heap
+          : [];
 
       return {
         currentLine,
         variables: snapshot.variables || {},
-        callStack: Array.isArray(snapshot.callStack) ? snapshot.callStack : [],
-        heap: Array.isArray(snapshot.heap) ? snapshot.heap : []
+        callStack: Array.isArray(snapshot.callStack) ? snapshot.callStack : stackFrames,
+        heap: heapObjects,
+        stackFrames,
+        heapObjects,
+        references: Array.isArray(snapshot.references) ? snapshot.references : []
       };
     }
 
@@ -761,116 +894,360 @@ class MemoryVisualizerPanel {
     }
 
     function renderExecutionState() {
-      executionState.textContent = "";
-      variables.textContent = "";
+      clear(summary, stack, heap, references, variables);
 
       const snapshot = state.currentExecutionState;
 
       if (!snapshot) {
-        appendEmpty(executionState, "Nenhuma execucao ainda.");
+        stackCount.textContent = "0";
+        heapCount.textContent = "0";
+        referenceCount.textContent = "0";
+        variableCount.textContent = "0";
+        appendEmpty(summary, "Nenhuma execucao ainda.");
+        appendEmpty(stack, "Stack vazio.");
+        appendEmpty(heap, "Heap vazio.");
+        appendEmpty(references, "Sem referencias.");
         appendEmpty(variables, "Sem variaveis.");
         return;
       }
 
-      const metrics = document.createElement("div");
-      metrics.className = "state-metrics";
-      metrics.append(
-        createMetric("Etapa", String(state.historyIndex + 1) + "/" + String(state.history.length)),
-        createMetric("Linha", snapshot.currentLine ? String(snapshot.currentLine) : "final"),
-        createMetric("Frames", String(snapshot.callStack.length)),
-        createMetric("Heap", String(snapshot.heap.length))
-      );
-      executionState.append(metrics);
+      const stackFrames = snapshot.stackFrames || [];
+      const heapObjects = snapshot.heapObjects || [];
+      const referenceList = snapshot.references || [];
+      const variableList = sortedVariables(snapshot.variables || {});
 
-      const stackList = document.createElement("div");
-      stackList.className = "stack-list";
+      stackCount.textContent = String(stackFrames.length);
+      heapCount.textContent = String(heapObjects.length);
+      referenceCount.textContent = String(referenceList.length);
+      variableCount.textContent = String(variableList.length);
 
-      if (snapshot.callStack.length === 0) {
-        appendEmpty(stackList, "Call stack vazio.");
-      } else {
-        snapshot.callStack.forEach((frame) => {
-          const frameRow = document.createElement("div");
-          frameRow.className = "stack-frame";
-          frameRow.textContent = frame.name + "() - linha " + frame.line;
-          stackList.append(frameRow);
-        });
-      }
-
-      executionState.append(stackList);
-      renderVariables(snapshot);
+      renderSummary(snapshot, stackFrames, heapObjects, referenceList, variableList);
+      renderStack(snapshot, stackFrames);
+      renderHeap(snapshot, heapObjects);
+      renderReferences(snapshot, referenceList);
+      renderVariables(snapshot, variableList);
     }
 
-    function renderVariables(snapshot) {
-      const currentVariables = Object.values(snapshot.variables || {})
-        .sort((left, right) => left.name.localeCompare(right.name));
-      const previousSnapshot = state.history[state.historyIndex - 1];
-      const previousVariables = previousSnapshot ? previousSnapshot.variables || {} : {};
+    function renderSummary(snapshot, stackFrames, heapObjects, referenceList, variableList) {
+      const grid = document.createElement("div");
+      grid.className = "summary-grid";
+      grid.append(
+        createMetric("Etapa", String(state.historyIndex + 1) + "/" + String(state.history.length)),
+        createMetric("Linha", snapshot.currentLine ? String(snapshot.currentLine) : "final"),
+        createMetric("Frames", String(stackFrames.length)),
+        createMetric("Objetos", String(heapObjects.length)),
+        createMetric("Referencias", String(referenceList.length)),
+        createMetric("Variaveis", String(variableList.length))
+      );
+      summary.append(grid);
+    }
 
-      if (currentVariables.length === 0) {
-        appendEmpty(variables, "Sem variaveis.");
+    function renderStack(snapshot, stackFrames) {
+      if (stackFrames.length === 0) {
+        appendEmpty(stack, "Stack vazio.");
         return;
       }
 
-      currentVariables.forEach((variable) => {
-        const previous = previousVariables[variable.name];
-        const row = document.createElement("div");
-        const changed = previous && previous.repr !== variable.repr;
-        const created = !previous;
-        row.className = "variable-row" + (created ? " created" : changed ? " changed" : "");
+      const previousFrames = getPreviousStackFrames();
 
-        const name = document.createElement("span");
-        name.className = "variable-name";
-        name.textContent = variable.name;
+      stackFrames.forEach((frame) => {
+        const previous = previousFrames.get(frame.id || frame.name);
+        const frameElement = document.createElement("article");
+        frameElement.className = "stack-frame" + changeClass(previous, frameSignature(frame));
 
-        const arrow = document.createElement("span");
-        arrow.className = "variable-arrow";
-        arrow.textContent = "->";
+        const header = document.createElement("div");
+        header.className = "card-header";
+        header.append(createText("strong", "card-title", frame.name + "()"));
+        header.append(createText("span", "card-meta", "linha " + frame.line));
+        frameElement.append(header);
 
-        const value = document.createElement("span");
-        value.className = "variable-value";
-        value.title = variable.repr;
-        value.textContent = variable.repr;
+        const parameters = Array.isArray(frame.parameters) ? frame.parameters : [];
+        if (parameters.length > 0) {
+          const parameterList = document.createElement("div");
+          parameterList.className = "parameter-list";
+          parameters.forEach((parameter) => {
+            parameterList.append(createText("span", "parameter-chip", parameter.name + " = " + formatValue(parameter, snapshot)));
+          });
+          frameElement.append(parameterList);
+        }
 
-        const scope = document.createElement("span");
-        scope.className = "variable-scope";
-        scope.textContent = variable.scope + " | " + variable.type + variableChangeLabel(created, changed);
-
-        row.append(name, arrow, value, scope);
-        variables.append(row);
+        const frameVariables = sortedVariables(frame.variables || {});
+        const variableList = document.createElement("div");
+        variableList.className = "frame-variable-list";
+        if (frameVariables.length === 0) {
+          appendEmpty(variableList, "Sem variaveis locais.");
+        } else {
+          frameVariables.forEach((variable) => {
+            variableList.append(createVariableRow(variable, snapshot, previous ? previous.variables : undefined));
+          });
+        }
+        frameElement.append(variableList);
+        stack.append(frameElement);
       });
     }
 
-    function variableChangeLabel(created, changed) {
-      if (created) {
+    function renderHeap(snapshot, heapObjects) {
+      if (heapObjects.length === 0) {
+        appendEmpty(heap, "Heap vazio.");
+        return;
+      }
+
+      const previousObjects = getPreviousHeapObjects();
+
+      heapObjects.forEach((object) => {
+        const previous = previousObjects.get(object.id);
+        const objectElement = document.createElement("article");
+        objectElement.className = "heap-object" + changeClass(previous, heapSignature(object));
+
+        const header = document.createElement("div");
+        header.className = "card-header";
+        header.append(createText("strong", "card-title", object.type));
+        header.append(createText("span", "object-id", object.id));
+        objectElement.append(header);
+        objectElement.append(createText("div", "card-meta", object.address || object.repr || ""));
+
+        const members = document.createElement("div");
+        members.className = "member-list";
+        const fields = Array.isArray(object.fields) ? object.fields : [];
+        const items = Array.isArray(object.items) ? object.items : [];
+
+        if (fields.length === 0 && items.length === 0) {
+          appendEmpty(members, object.repr || "Sem campos.");
+        } else {
+          fields.forEach((field) => {
+            members.append(createMemberRow(field.name, field.value, snapshot, previous));
+          });
+          items.forEach((item) => {
+            const label = item.key ? "[" + formatValue(item.key, snapshot) + "]" : "[" + item.name + "]";
+            members.append(createMemberRow(label, item.value, snapshot, previous));
+          });
+        }
+
+        objectElement.append(members);
+        heap.append(objectElement);
+      });
+    }
+
+    function renderReferences(snapshot, referenceList) {
+      if (referenceList.length === 0) {
+        appendEmpty(references, "Sem referencias.");
+        return;
+      }
+
+      const previousReferences = getPreviousReferenceSignatures();
+
+      referenceList.forEach((reference) => {
+        const signature = referenceSignature(reference);
+        const row = document.createElement("div");
+        row.className = "reference-row" + (previousReferences.has(signature) ? "" : " created");
+
+        const main = document.createElement("div");
+        main.className = "reference-main";
+        main.append(createText("span", "reference-source", reference.sourceLabel || reference.source));
+        main.append(createText("span", "reference-arrow", "->"));
+        main.append(createText("span", "reference-target", heapLabel(reference.target, snapshot)));
+        row.append(main);
+        row.append(createText("div", "reference-kind", reference.kind === "heap" ? "campo de objeto" : "variavel"));
+        references.append(row);
+      });
+    }
+
+    function renderVariables(snapshot, variableList) {
+      if (variableList.length === 0) {
+        appendEmpty(variables, "Sem variaveis.");
+        return;
+      }
+
+      const previousSnapshot = state.history[state.historyIndex - 1];
+      const previousVariables = previousSnapshot ? previousSnapshot.variables || {} : {};
+
+      variableList.forEach((variable) => {
+        variables.append(createVariableRow(variable, snapshot, previousVariables));
+      });
+    }
+
+    function createVariableRow(variable, snapshot, previousVariables) {
+      const previous = previousVariables ? previousVariables[variable.name] : undefined;
+      const row = document.createElement("div");
+      row.className = "variable-row" + changeClass(previous, valueSignature(variable));
+
+      const main = document.createElement("div");
+      main.className = "variable-main";
+      main.append(createText("span", "variable-name", variable.name));
+      main.append(createText("span", "variable-arrow", variable.kind === "reference" ? "->" : "="));
+      main.append(createText("span", "variable-value", formatValue(variable, snapshot)));
+      row.append(main);
+      row.append(createText("div", "variable-meta", variable.scope + " | " + variable.type + changeLabel(previous, valueSignature(variable))));
+      return row;
+    }
+
+    function createMemberRow(name, value, snapshot, previousObject) {
+      const row = document.createElement("div");
+      const previousMembers = previousObject ? memberSignatureMap(previousObject) : new Map();
+      const previous = previousMembers.get(name);
+      row.className = "member-row" + changeClass(previous, valueSignature(value));
+
+      const main = document.createElement("div");
+      main.className = "member-main";
+      main.append(createText("span", "member-name", name));
+      main.append(createText("span", "member-arrow", value.kind === "reference" ? "->" : "="));
+      main.append(createText("span", "member-value", formatValue(value, snapshot)));
+      row.append(main);
+      row.append(createText("div", "member-meta", value.type || "valor"));
+      return row;
+    }
+
+    function formatValue(value, snapshot) {
+      if (!value) {
+        return "undefined";
+      }
+
+      if (value.kind === "reference" && value.target) {
+        return heapLabel(value.target, snapshot);
+      }
+
+      return value.repr === undefined ? String(value.value) : value.repr;
+    }
+
+    function heapLabel(targetId, snapshot) {
+      const object = findHeapObject(snapshot, targetId);
+      if (!object) {
+        return targetId || "objeto";
+      }
+
+      return object.type + " " + object.id;
+    }
+
+    function findHeapObject(snapshot, targetId) {
+      return (snapshot.heapObjects || []).find((object) => object.id === targetId);
+    }
+
+    function getPreviousStackFrames() {
+      const previousSnapshot = state.history[state.historyIndex - 1];
+      const map = new Map();
+      if (!previousSnapshot) {
+        return map;
+      }
+
+      (previousSnapshot.stackFrames || []).forEach((frame) => {
+        map.set(frame.id || frame.name, {
+          signature: frameSignature(frame),
+          variables: frame.variables || {}
+        });
+      });
+      return map;
+    }
+
+    function getPreviousHeapObjects() {
+      const previousSnapshot = state.history[state.historyIndex - 1];
+      const map = new Map();
+      if (!previousSnapshot) {
+        return map;
+      }
+
+      (previousSnapshot.heapObjects || []).forEach((object) => {
+        map.set(object.id, heapSignature(object));
+      });
+      return map;
+    }
+
+    function getPreviousReferenceSignatures() {
+      const previousSnapshot = state.history[state.historyIndex - 1];
+      const set = new Set();
+      if (!previousSnapshot) {
+        return set;
+      }
+
+      (previousSnapshot.references || []).forEach((reference) => {
+        set.add(referenceSignature(reference));
+      });
+      return set;
+    }
+
+    function sortedVariables(variableMap) {
+      return Object.values(variableMap || {})
+        .sort((left, right) => left.name.localeCompare(right.name));
+    }
+
+    function memberSignatureMap(object) {
+      const map = new Map();
+      (object.fields || []).forEach((field) => map.set(field.name, valueSignature(field.value)));
+      (object.items || []).forEach((item) => map.set(item.key ? "[" + formatRawValue(item.key) + "]" : "[" + item.name + "]", valueSignature(item.value)));
+      return map;
+    }
+
+    function valueSignature(value) {
+      if (!value) {
+        return "";
+      }
+
+      return [value.kind, value.type, value.target || "", value.repr || String(value.value)].join("|");
+    }
+
+    function frameSignature(frame) {
+      return JSON.stringify({ line: frame.line, variables: frame.variables || {} });
+    }
+
+    function heapSignature(object) {
+      return JSON.stringify({ repr: object.repr, fields: object.fields || [], items: object.items || [] });
+    }
+
+    function referenceSignature(reference) {
+      return [reference.kind, reference.sourceLabel || reference.source, reference.target].join("|");
+    }
+
+    function formatRawValue(value) {
+      if (!value) {
+        return "undefined";
+      }
+
+      return value.repr === undefined ? String(value.value) : value.repr;
+    }
+
+    function changeClass(previous, currentSignature) {
+      if (!previous) {
+        return " created";
+      }
+
+      const previousSignature = typeof previous === "string" ? previous : previous.signature;
+      return previousSignature !== currentSignature ? " changed" : "";
+    }
+
+    function changeLabel(previous, currentSignature) {
+      if (!previous) {
         return " | criada";
       }
 
-      if (changed) {
-        return " | alterada";
-      }
-
-      return "";
+      const previousSignature = typeof previous === "string" ? previous : valueSignature(previous);
+      return previousSignature !== currentSignature ? " | alterada" : "";
     }
 
     function createMetric(label, value) {
       const metric = document.createElement("div");
       metric.className = "metric";
-
-      const labelElement = document.createElement("span");
-      labelElement.textContent = label;
-
-      const valueElement = document.createElement("strong");
-      valueElement.textContent = value;
-
-      metric.append(labelElement, valueElement);
+      metric.append(createText("span", "", label));
+      metric.append(createText("strong", "", value));
       return metric;
     }
 
+    function createText(tagName, className, text) {
+      const element = document.createElement(tagName);
+      if (className) {
+        element.className = className;
+      }
+      element.textContent = text || "";
+      element.title = text || "";
+      return element;
+    }
+
     function appendEmpty(parent, text) {
-      const empty = document.createElement("div");
-      empty.className = "empty-state";
-      empty.textContent = text;
-      parent.append(empty);
+      parent.append(createText("div", "empty-state", text));
+    }
+
+    function clear() {
+      Array.from(arguments).forEach((element) => {
+        element.textContent = "";
+      });
     }
 
     function renderCode() {

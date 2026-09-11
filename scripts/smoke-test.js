@@ -42,7 +42,7 @@ async function runSmokeTest() {
   const events = [];
 
   await new Promise((resolve, reject) => {
-    const child = spawn(python.command, [...python.args, runnerPath, samplePath], {
+    const child = spawn(python.command, [...python.args, "-B", runnerPath, samplePath], {
       cwd: root,
       stdio: ["pipe", "pipe", "pipe"]
     });
@@ -92,14 +92,42 @@ async function runSmokeTest() {
     .map((event) => event.text)
     .join("");
 
-  assert(pausedEvents.length >= 5, "expected at least five paused events");
+  assert(pausedEvents.length >= 8, "expected at least eight paused events");
   assert(stateEvents.length > 0, "expected paused events to include execution state");
   assert(doneEvent, "expected a done event");
   assert.strictEqual(doneEvent.exitCode, 0, "expected a successful exit code");
   assert(doneEvent.state, "expected done event to include final execution state");
-  assert(doneEvent.state.variables.total, "expected final state to include total");
-  assert.strictEqual(doneEvent.state.variables.total.repr, "3", "expected final total to be 3");
-  assert(outputText.includes("Code Memory 0"), "expected program output");
+
+  const finalState = doneEvent.state;
+  assert(Array.isArray(finalState.stackFrames), "expected stackFrames in final state");
+  assert(Array.isArray(finalState.heapObjects), "expected heapObjects in final state");
+  assert(Array.isArray(finalState.references), "expected references in final state");
+  assert(finalState.variables.counter, "expected final state to include counter");
+  assert(finalState.variables.alias, "expected final state to include alias");
+  assert.strictEqual(
+    finalState.variables.counter.target,
+    finalState.variables.alias.target,
+    "expected counter and alias to reference the same heap object"
+  );
+  const counterObject = finalState.heapObjects.find((object) => object.type === "Counter");
+  assert(counterObject, "expected heap to include the Counter object");
+  assert(
+    counterObject.fields.some((field) => field.name === "label"),
+    "expected Counter heap object to include label"
+  );
+  assert(
+    counterObject.fields.some((field) => field.name === "values" && field.value.kind === "reference"),
+    "expected Counter.values to reference the internal list object"
+  );
+  assert(
+    finalState.references.some((reference) => reference.target === finalState.variables.counter.target),
+    "expected references to point to the Counter object"
+  );
+  assert(
+    stateEvents.some((event) => event.state.stackFrames.some((frame) => frame.name === "add")),
+    "expected a captured stack frame for Counter.add"
+  );
+  assert(outputText.includes("Code Memory 3"), "expected program output");
 
   console.log("Smoke test passed.");
 }
