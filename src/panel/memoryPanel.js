@@ -80,6 +80,9 @@ class MemoryVisualizerPanel {
       case "step":
         this.stepExecution();
         break;
+      case "continue":
+        this.continueExecution();
+        break;
       case "restart":
         this.restartExecution();
         break;
@@ -93,7 +96,7 @@ class MemoryVisualizerPanel {
       this.post({
         type: "status",
         state: "idle",
-        message: "Abra um arquivo Python"
+        message: "Abra um arquivo Python ou Java"
       });
       return;
     }
@@ -103,7 +106,7 @@ class MemoryVisualizerPanel {
         type: "status",
         state: this.session.isPaused() ? "paused" : "running",
         message: this.session.isPaused()
-          ? "Pausado. Use Proxima etapa ou Reiniciar."
+          ? "Pausado. Use Proxima etapa, Continuar ou Reiniciar."
           : "Executando..."
       });
       return;
@@ -698,6 +701,7 @@ class MemoryVisualizerPanel {
 
     <nav class="toolbar" aria-label="Execution controls">
       <button id="run" title="Executar"><span aria-hidden="true">&#9654;</span><span>Executar</span></button>
+      <button id="continue" class="secondary" title="Continuar"><span aria-hidden="true">&#9658;</span><span>Continuar</span></button>
       <button id="back" class="secondary" title="Voltar etapa"><span aria-hidden="true">&#8592;</span><span>Voltar etapa</span></button>
       <button id="step" class="secondary" title="Proxima etapa"><span aria-hidden="true">&#9193;</span><span>Proxima etapa</span></button>
       <button id="restart" class="secondary" title="Reiniciar"><span aria-hidden="true">&#8635;</span><span>Reiniciar</span></button>
@@ -753,6 +757,7 @@ class MemoryVisualizerPanel {
     const variableCount = document.getElementById("variableCount");
     const output = document.getElementById("output");
     const run = document.getElementById("run");
+    const continueButton = document.getElementById("continue");
     const back = document.getElementById("back");
     const step = document.getElementById("step");
     const restart = document.getElementById("restart");
@@ -769,6 +774,7 @@ class MemoryVisualizerPanel {
     };
 
     run.addEventListener("click", () => vscode.postMessage({ command: "run" }));
+    continueButton.addEventListener("click", () => vscode.postMessage({ command: "continue" }));
     back.addEventListener("click", () => showHistoryState(state.historyIndex - 1));
     step.addEventListener("click", () => {
       if (state.historyIndex < state.history.length - 1) {
@@ -1296,6 +1302,7 @@ class MemoryVisualizerPanel {
       const canStepLive = isPaused && state.historyIndex === state.history.length - 1;
 
       run.disabled = !hasSource || isRunning || isPaused;
+      continueButton.disabled = !hasSource || isRunning || !canStepLive;
       back.disabled = !hasSource || isRunning || !hasPreviousState;
       step.disabled = !hasSource || isRunning || (!canStepLive && !hasNextHistoryState);
       restart.disabled = !hasSource || isRunning;

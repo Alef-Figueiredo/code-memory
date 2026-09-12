@@ -373,6 +373,10 @@ def tracer(frame, event, arg):
         if command in ("stop", "quit"):
             raise SystemExit(0)
 
+        if command == "continue":
+            sys.settrace(None)
+            return None
+
     return tracer
 
 

@@ -1,12 +1,14 @@
 const path = require("path");
 const vscode = require("vscode");
 const { PythonAdapter } = require("./adapters/pythonAdapter");
+const { JavaAdapter } = require("./adapters/javaAdapter");
 const { MemoryVisualizerPanel } = require("./panel/memoryPanel");
 
 function activate(context) {
   const outputChannel = vscode.window.createOutputChannel("Code Memory");
   const adapters = [
-    new PythonAdapter(context.extensionUri, outputChannel)
+    new PythonAdapter(context.extensionUri, outputChannel),
+    new JavaAdapter(context.extensionUri, outputChannel)
   ];
 
   const startCommand = vscode.commands.registerCommand("codeMemory.start", async (uri) => {
@@ -20,7 +22,7 @@ function activate(context) {
       const adapter = selectAdapter(adapters, document);
 
       if (!adapter) {
-        vscode.window.showWarningMessage("Code Memory currently supports Python files only.");
+        vscode.window.showWarningMessage("Code Memory currently supports Python and Java files.");
         return;
       }
 
@@ -58,9 +60,10 @@ async function resolveDocument(uri, adapters) {
     canSelectFiles: true,
     canSelectFolders: false,
     canSelectMany: false,
-    openLabel: "Open Python file",
+    openLabel: "Open code file",
     filters: {
       Python: ["py"],
+      Java: ["java"],
       "All files": ["*"]
     }
   });

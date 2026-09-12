@@ -1,8 +1,8 @@
 {
   "name": "code-memory-visualizer",
   "displayName": "Code Memory Visualizer",
-  "description": "Educational VS Code extension prototype for stepping through Python code and visualizing memory state.",
-  "version": "0.3.0",
+  "description": "Educational VS Code extension prototype for stepping through Python and Java code while visualizing memory state.",
+  "version": "0.4.0",
   "publisher": "local",
   "engines": {
     "vscode": "^1.90.0"
@@ -34,11 +34,21 @@
           "type": "string",
           "default": "python",
           "description": "Python command used by Code Memory. Examples: python, python3, py -3."
+        },
+        "codeMemory.javaPath": {
+          "type": "string",
+          "default": "java",
+          "description": "Java command used by Code Memory. It must come from a JDK with the jdk.jdi module."
+        },
+        "codeMemory.javacPath": {
+          "type": "string",
+          "default": "javac",
+          "description": "Java compiler command used by Code Memory. It must come from a JDK."
         }
       }
     }
   },
   "scripts": {
-    "test": "node scripts/smoke-test.js"
+    "test": "node scripts/smoke-test.js && node scripts/java-smoke-test.js"
   }
 }

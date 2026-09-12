@@ -2,6 +2,7 @@ const { spawn } = require("child_process");
 const path = require("path");
 const vscode = require("vscode");
 const { LanguageAdapter } = require("./languageAdapter");
+const { parseCommandLine } = require("../utils/commandLine");
 
 class PythonAdapter extends LanguageAdapter {
   constructor(extensionUri, outputChannel) {
@@ -49,7 +50,7 @@ class PythonExecutionSession {
       return;
     }
 
-    const commandParts = parseCommandLine(this.pythonPath);
+    const commandParts = parseCommandLine(this.pythonPath, "python");
     const command = commandParts[0] || "python";
     const args = [...commandParts.slice(1), this.runnerPath, this.filePath];
 
@@ -82,13 +83,21 @@ class PythonExecutionSession {
   }
 
   step() {
+    this.sendCommand("step");
+  }
+
+  continue() {
+    this.sendCommand("continue");
+  }
+
+  sendCommand(command) {
     if (!this.child || this.done || !this.child.stdin.writable) {
       return;
     }
 
     this.paused = false;
-    this.callbacks.onStatus("running", "Executando...");
-    this.child.stdin.write(JSON.stringify({ command: "step" }) + "\n");
+    this.callbacks.onStatus("running", command === "continue" ? "Continuando..." : "Executando...");
+    this.child.stdin.write(JSON.stringify({ command }) + "\n");
   }
 
   stop() {
@@ -176,21 +185,6 @@ class PythonExecutionSession {
     }
   }
 }
-
-function parseCommandLine(commandLine) {
-  const tokens = [];
-  const pattern = /"([^"]*)"|'([^']*)'|[^\s]+/g;
-  let match = pattern.exec(commandLine || "");
-
-  while (match) {
-    tokens.push(match[1] || match[2] || match[0]);
-    match = pattern.exec(commandLine || "");
-  }
-
-  return tokens.length > 0 ? tokens : ["python"];
-}
-
 module.exports = {
-  PythonAdapter,
-  parseCommandLine
+  PythonAdapter
 };
