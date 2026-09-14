@@ -168,7 +168,7 @@ class JavaExecutionSession {
     }
 
     this.paused = false;
-    this.callbacks.onStatus("running", command === "continue" ? "Continuando..." : "Executando...");
+    this.callbacks.onStatus("running", command === "continue" ? "Continuando ate o proximo breakpoint ou fim..." : "Executando...");
     this.child.stdin.write(JSON.stringify({ command }) + "\n");
   }
 

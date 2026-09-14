@@ -106,7 +106,7 @@ class MemoryVisualizerPanel {
         type: "status",
         state: this.session.isPaused() ? "paused" : "running",
         message: this.session.isPaused()
-          ? "Pausado. Use Proxima etapa, Continuar ou Reiniciar."
+          ? "Pausado. Use Proxima etapa, Continuar ate o proximo breakpoint, ou Reiniciar."
           : "Executando..."
       });
       return;
@@ -274,6 +274,8 @@ class MemoryVisualizerPanel {
       --accent: var(--vscode-focusBorder);
       --panel-border: var(--vscode-panel-border);
       --muted: var(--vscode-descriptionForeground);
+      --current-arrow: var(--vscode-charts-red, #f14c4c);
+      --flow-arrow: var(--vscode-charts-green, #73c991);
       --created: var(--vscode-charts-green, #4caf50);
       --changed: var(--vscode-charts-yellow, #f5c542);
       --reference: var(--vscode-charts-blue, #4da3ff);
@@ -428,7 +430,7 @@ class MemoryVisualizerPanel {
     .line {
       min-height: var(--line-height);
       display: grid;
-      grid-template-columns: 56px minmax(0, 1fr);
+      grid-template-columns: 26px 48px minmax(0, 1fr);
       border-left: 3px solid transparent;
     }
 
@@ -439,8 +441,29 @@ class MemoryVisualizerPanel {
       outline-offset: -1px;
     }
 
+    .execution-pointer {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .execution-pointer::before {
+      content: "";
+      width: 0;
+      height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-left: 10px solid transparent;
+      transform: translateX(2px);
+    }
+
+    .line.current .execution-pointer::before {
+      border-left-color: var(--current-arrow);
+    }
+
     .line-number {
-      padding: 0 10px;
+      padding: 0 8px 0 0;
       color: var(--vscode-editorLineNumber-foreground);
       text-align: right;
       user-select: none;
@@ -512,9 +535,10 @@ class MemoryVisualizerPanel {
     .stack-frame,
     .heap-object {
       min-width: 0;
+      position: relative;
       display: grid;
       gap: 8px;
-      padding: 9px;
+      padding: 9px 9px 9px 20px;
       border: 1px solid var(--panel-border);
       border-left: 3px solid var(--reference);
       border-radius: 6px;
@@ -524,6 +548,7 @@ class MemoryVisualizerPanel {
     .stack-frame.created,
     .heap-object.created,
     .variable-row.created,
+    .member-row.created,
     .reference-row.created {
       border-left-color: var(--created);
       animation: pulseChange 520ms ease-out;
@@ -606,9 +631,10 @@ class MemoryVisualizerPanel {
     .member-row,
     .reference-row {
       min-width: 0;
+      position: relative;
       display: grid;
       gap: 4px;
-      padding: 6px 7px;
+      padding: 6px 7px 6px 18px;
       border-left: 3px solid transparent;
       background: var(--surface);
     }
@@ -627,7 +653,55 @@ class MemoryVisualizerPanel {
     .member-arrow,
     .reference-arrow {
       color: var(--reference);
+      font-weight: 700;
       text-align: center;
+    }
+
+    .stack-frame::before,
+    .heap-object::before,
+    .variable-row::before,
+    .member-row::before,
+    .reference-row::before {
+      content: "";
+      position: absolute;
+      top: 12px;
+      left: 6px;
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid transparent;
+      opacity: 0;
+    }
+
+    .stack-frame.created::before,
+    .heap-object.created::before,
+    .variable-row.created::before,
+    .member-row.created::before,
+    .reference-row.created::before {
+      border-left-color: var(--flow-arrow);
+      opacity: 1;
+    }
+
+    .stack-frame.changed::before,
+    .heap-object.changed::before,
+    .variable-row.changed::before,
+    .member-row.changed::before,
+    .reference-row.changed::before {
+      border-left-color: var(--changed);
+      opacity: 1;
+    }
+
+    .variable-row.created .variable-arrow,
+    .member-row.created .member-arrow,
+    .reference-row.created .reference-arrow {
+      color: var(--flow-arrow);
+    }
+
+    .variable-row.changed .variable-arrow,
+    .member-row.changed .member-arrow,
+    .reference-row.changed .reference-arrow {
+      color: var(--changed);
     }
 
     .variable-value,
@@ -636,7 +710,7 @@ class MemoryVisualizerPanel {
       font-family: var(--vscode-editor-font-family);
     }
 
-    .reference-row {
+    .reference-row:not(.created):not(.changed) {
       border-left-color: var(--reference);
     }
 
@@ -701,7 +775,7 @@ class MemoryVisualizerPanel {
 
     <nav class="toolbar" aria-label="Execution controls">
       <button id="run" title="Executar"><span aria-hidden="true">&#9654;</span><span>Executar</span></button>
-      <button id="continue" class="secondary" title="Continuar"><span aria-hidden="true">&#9658;</span><span>Continuar</span></button>
+      <button id="continue" class="secondary" title="Continuar ate o proximo breakpoint ou fim"><span aria-hidden="true">&#9658;</span><span>Continuar</span></button>
       <button id="back" class="secondary" title="Voltar etapa"><span aria-hidden="true">&#8592;</span><span>Voltar etapa</span></button>
       <button id="step" class="secondary" title="Proxima etapa"><span aria-hidden="true">&#9193;</span><span>Proxima etapa</span></button>
       <button id="restart" class="secondary" title="Reiniciar"><span aria-hidden="true">&#8635;</span><span>Reiniciar</span></button>
@@ -1265,6 +1339,10 @@ class MemoryVisualizerPanel {
         const row = document.createElement("div");
         row.className = lineNumber === state.currentLine ? "line current" : "line";
 
+        const pointer = document.createElement("span");
+        pointer.className = "execution-pointer";
+        pointer.title = lineNumber === state.currentLine ? "Linha atual" : "";
+
         const gutter = document.createElement("span");
         gutter.className = "line-number";
         gutter.textContent = String(lineNumber);
@@ -1273,7 +1351,7 @@ class MemoryVisualizerPanel {
         content.className = "line-code";
         content.textContent = line;
 
-        row.append(gutter, content);
+        row.append(pointer, gutter, content);
         fragment.append(row);
       });
 
